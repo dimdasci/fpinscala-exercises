@@ -107,26 +107,76 @@ object List: // `List` companion object. Contains functions for creating and wor
   def lengthViaFoldLeft[A](l: List[A]): Int = 
     foldLeft(l, 0, (acc, _) => acc + 1)
 
-  def reverse[A](l: List[A]): List[A] = ???
+  def reverse[A](l: List[A]): List[A] = 
+    foldLeft(l, Nil: List[A], (acc: List[A], a: A) => Cons(a, acc))
 
-  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = ???
+  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = 
+    foldRight(l, r, (h, t)=>Cons(h, t))
 
-  def concat[A](l: List[List[A]]): List[A] = ???
+  def appendViaFoldLeft[A](l: List[A], r: List[A]): List[A] =
+    foldLeft(reverse(l), r, (t, h) => Cons(h, t))
+    
+  def concat[A](l: List[List[A]]): List[A] = 
+    foldRight(l, Nil: List[A], append)
 
-  def incrementEach(l: List[Int]): List[Int] = ???
+  def incrementEach(l: List[Int]): List[Int] = 
+    foldRight(l, Nil: List[Int], (h, acc)=>Cons(h+1, acc))
 
-  def doubleToString(l: List[Double]): List[String] = ???
+  def doubleToString(l: List[Double]): List[String] = 
+    foldRight(l, Nil: List[String], (h, acc)=>Cons(h.toString(), acc))
 
-  def map[A,B](l: List[A], f: A => B): List[B] = ???
+  def map[A,B](l: List[A], f: A => B): List[B] =
+    foldLeft(reverse(l), Nil:List[B], (acc, a) => Cons(f(a), acc))
 
-  def filter[A](as: List[A], f: A => Boolean): List[A] = ???
+  def filter[A](as: List[A], f: A => Boolean): List[A] = 
+    @annotation.tailrec
+    def go(l: List[A], g: A => Boolean): List[A] =
+      l match
+        case Nil => Nil
+        case Cons(h, t) if g(h) => Cons(h, filter(t, g)) 
+        case Cons(_, t) => go(t, g)
 
-  def flatMap[A,B](as: List[A], f: A => List[B]): List[B] = ???
+    go(as, f)
+      
+  def filterViaFoldLeft[A](as: List[A], f: A => Boolean): List[A] = 
+    foldLeft(reverse(as), Nil: List[A], (t, h) => if f(h) then Cons(h, t) else t)
 
-  def filterViaFlatMap[A](as: List[A], f: A => Boolean): List[A] = ???
+  def flatMap[A,B](as: List[A], f: A => List[B]): List[B] = 
+    concat(map(as, f))
 
-  def addPairwise(a: List[Int], b: List[Int]): List[Int] = ???
+  def filterViaFlatMap[A](as: List[A], f: A => Boolean): List[A] = 
+    flatMap(as, a => if f(a) then List(a) else Nil)
+
+  def addPairwise(a: List[Int], b: List[Int]): List[Int] = 
+    a match
+      case Nil => Nil
+      case Cons(ah, at) => b match
+        case Nil => Nil
+        case Cons(bh, bt) => Cons(ah+bh, addPairwise(at, bt))
+  
 
   // def zipWith - TODO determine signature
+  def zipWith[A, B, C](a: List[A], b: List[B], f: (A, B) => C): List[C] = 
+    (a, b) match
+      case (Nil, _) => Nil
+      case (_, Nil) => Nil
+      case (Cons(ah, at), Cons(bh, bt)) => Cons(f(ah, bh), zipWith(at, bt, f))
+    
 
-  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = ???
+  @annotation.tailrec
+  def hasSameStart[A](l: List[A], s: List[A]): Boolean = (l, s) match
+    case (_, Nil) => true
+    case (Cons(lh, lt), Cons(sh, st)) if lh == sh => hasSameStart(lt, st) 
+    case _ => false
+
+  @annotation.tailrec
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = sup match
+    case Nil => sub == Nil
+    case _ if hasSameStart(sup, sub) => true
+    case Cons(_, t) => hasSubsequence(t, sub)
+  
+
+
+    
+
+    
